@@ -19,10 +19,12 @@ from django.contrib import admin
 from django.urls import path, include
 from debug_toolbar.toolbar import debug_toolbar_urls
 from django.conf import settings
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
+    path("", TemplateView.as_view(template_name="root.html"), name="root"),
 ]
 
 if settings.DEBUG:
