@@ -1,26 +1,5 @@
-{# Load the tag library #}
-{% load django_bootstrap5 %}
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>shopping mall</title>
-    {# Load CSS and JavaScript #}
-    {% bootstrap_css %}
-    {% bootstrap_javascript %}
-
-  </head>
-
-  <body>
-    <h1>shopping mall</h1>
-
-    <button class="btn btn-primary">click</button>
-
-    <hr/>
-    &copy; 2024. All rights reserved.
-  </body>
-
-</html>
+{% block content %}
+  <button class="btn btn-primary">click</button>
+{% endblock content %}
