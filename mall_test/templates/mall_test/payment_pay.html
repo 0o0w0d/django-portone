@@ -3,6 +3,11 @@
 {% block content %}
   <h2>Payment</h2>
 
+  {{ payment_props|json_script:"payment-props" }}
+
+  <script>
+    window.PAYMENT_CHECK_URL = "{{ payment_check_url }}"
+  </script>
   <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
   <script>
     (function () {
@@ -10,16 +15,17 @@
       const code = "iamport";
       IMP.init(code);
 
-      const merchant_uid = "merchant_" + new Date().getTime();
+      const props_json = document
+        .querySelector('#payment-props')
+        .textContent
 
-      IMP.request_pay({
-        merchant_uid: merchant_uid,
-        name: "주문 테스트",
-        amount: 100
-      }, function (response) {
+      const props = JSON.parse(props_json)
+
+      IMP.request_pay(props, function (response) {
         // 콜백 함수
-        console.log(response)
-      })
+        location.href = window.PAYMENT_CHECK_URL;
+      });
+
     })();
   </script>
 {% endblock content %}
