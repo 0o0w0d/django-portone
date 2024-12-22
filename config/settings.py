@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # local
     "accounts",
+    "mall_test",
     # 3rd party
     "django_bootstrap5",
 ]
