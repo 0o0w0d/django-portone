@@ -27,12 +27,25 @@ def payment_pay(request, pk):
         "amount": payment.amount,
     }
     payment_check_url = reverse("payment_check", args=[payment.pk])
+    portone_shop_id = settings.PORTONE_SHOP_ID
+
     return render(
         request,
         "mall_test/payment_pay.html",
-        {"payment_props": payment_props, "payment_check_url": payment_check_url},
+        {
+            "payment_props": payment_props,
+            "payment_check_url": payment_check_url,
+            "portone_shop_id": portone_shop_id,
+        },
     )
 
 
 def payment_check(request, pk):
-    pass
+    payment = get_object_or_404(Payment, pk=pk)
+    payment.portone_check()
+    return redirect("payment_detail", pk=payment.pk)
+
+
+def payment_detail(request, pk):
+    payment = get_object_or_404(Payment, pk=pk)
+    return render(request, "mall_test/payment_detail.html", {"payment": payment})
