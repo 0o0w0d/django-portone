@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.decorators import login_required
 
 from accounts.forms import LoginForm, SignupForm
 from accounts.models import User
@@ -28,5 +29,6 @@ login = LoginView.as_view()
 logout = LogoutView.as_view()
 
 
+@login_required
 def profile(request):
-    pass
+    return render(request, "accounts/profile.html")
