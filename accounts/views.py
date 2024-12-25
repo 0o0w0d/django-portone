@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
+from django.contrib.auth.views import LoginView, LogoutView
 
-from accounts.forms import SignupForm
+from accounts.forms import LoginForm, SignupForm
 from accounts.models import User
 
 
@@ -13,11 +14,13 @@ class SignupView(CreateView):
     success_url = reverse_lazy("login")
 
 
+class LoginView(LoginView):
+    template_name = "accounts/login_form.html"
+    form_class = LoginForm
+
+
 signup = SignupView.as_view()
-
-
-def login(request):
-    pass
+login = LoginView.as_view()
 
 
 def logout(request):
