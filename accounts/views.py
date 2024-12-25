@@ -19,12 +19,13 @@ class LoginView(LoginView):
     form_class = LoginForm
 
 
+class LogoutView(LogoutView):
+    next_page = "login"
+
+
 signup = SignupView.as_view()
 login = LoginView.as_view()
-
-
-def logout(request):
-    pass
+logout = LogoutView.as_view()
 
 
 def profile(request):
