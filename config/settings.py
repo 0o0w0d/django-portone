@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # local
     "accounts",
     "mall_test",
+    "mall",
     # 3rd party
     "django_bootstrap5",
 ]
