@@ -1,12 +1,17 @@
 {% extends "mall/base.html" %}
 {% load humanize %}
+{% load thumbnail %}
 
 {% block content %}
   <div class="row">
     {% for product in product_list %}
       <div class="col-sm-6 col-lg-4">
         <div class="card">
-          <img class="card-img-top object-fit-cover" src="{{ product.photo.url }}" alt="{{ product.name }} 사진">
+          {% comment %} unibeautify-ignore {% endcomment %}
+          {% thumbnail product.photo "300x300" crop="center" as thumb %}
+          <img class="card-img-top object-fit-cover" src="{{ thumb.url }}" alt="{{ product.name }} 사진">
+          {% endthumbnail %}
+          {% comment %} unibeautify-ignore-end {% endcomment %}
           <div class="card-body">
             {{ product.category.name }}
             <div>

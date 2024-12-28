@@ -4,6 +4,7 @@ django-bootstrap5
 iamport-rest-client
 pillow
 requests
+sorl-thumbnail
 
 # for dev
 django-debug-toolbar
