@@ -3,6 +3,7 @@ django-environ
 django-bootstrap5
 iamport-rest-client
 pillow
+requests
 
 # for dev
 django-debug-toolbar
