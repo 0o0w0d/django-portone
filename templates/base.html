@@ -15,7 +15,6 @@
   </head>
 
   <body>
-
     <div class="container">
       <header class="py-3 mb-3 border-bottom">
         <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
@@ -76,6 +75,7 @@
       </header>
     </div>
     <div class="container">
+      {% bootstrap_messages %}
       {% block content %}{% endblock content %}
       <hr/>
       &copy; 2024. All rights reserved.
