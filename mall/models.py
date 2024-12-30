@@ -1,4 +1,8 @@
 from django.db import models
+from django.core.validators import MinValueValidator
+from django.db.models import UniqueConstraint
+
+from config import settings
 
 
 # Create your models here.
@@ -38,3 +42,23 @@ class Product(models.Model):
     class Meta:
         verbose_name = verbose_name_plural = "상품"
         ordering = ["-pk"]
+
+
+class CartProduct(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        db_constraint=False,
+        related_name="cart_product_set",
+    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_constraint=False)
+    quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+
+    def __str__(self):
+        return f"[{self.pk}] {self.product.name} - {self.quantity}개"
+
+    class Meta:
+        verbose_name_plural = verbose_name = "장바구니 상품"
+        constraints = [
+            UniqueConstraint(fields=["user", "product"], name="unique_user_product")
+        ]
