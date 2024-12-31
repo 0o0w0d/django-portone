@@ -31,6 +31,17 @@ product_list = ProductListView.as_view()
 
 
 @login_required
+def cart_detail(request):
+    user = request.user
+    cart_qs = (
+        CartProduct.objects.filter(user=user)
+        .select_related("product")
+        .order_by("product__name")
+    )
+    return render(request, "mall/cart_detail.html", {"cart_product_list": cart_qs})
+
+
+@login_required
 def add_to_cart(request, product_pk):
     user = request.user
     product_qs = Product.objects.filter(status=Product.Status.ACTIVE)
