@@ -1,3 +1,4 @@
+from uuid import uuid4
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.db.models import UniqueConstraint
@@ -62,3 +63,47 @@ class CartProduct(models.Model):
         constraints = [
             UniqueConstraint(fields=["user", "product"], name="unique_user_product")
         ]
+
+
+class Order(models.Model):
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "주문 요청"
+        FAILED_PAYMEMT = "failed_payment", "결제 실패"
+        PAID = "paid", "결제 완료"
+        PREPARED_PRODUCT = "prepared_product", "상품 준비중"
+        SHIPPED = "shipped", "배송중"
+        DELIVERED = "delivered", "배송완료"
+        CANCELED = "canceled", "주문 취소"
+
+    uid = models.UUIDField(default=uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_constraint=False
+    )
+    total_amount = models.PositiveIntegerField(verbose_name="결제 금액")
+    status = models.CharField(
+        verbose_name="진행 상황",
+        choices=Status.choices,
+        default=Status.REQUESTED,
+        max_length=20,
+        db_index=True,
+    )
+    product_set = models.ManyToManyField(Product, through="OrderedProduct", blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+# order - product M2M으로 연결하는 모델
+class OrderedProduct(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_constraint=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_constraint=False)
+    name = models.CharField(
+        verbose_name="상품명",
+        max_length=255,
+        help_text="주문 시점의 상품명을 저장합니다.",
+    )
+    price = models.PositiveIntegerField(
+        verbose_name="상품가격", help_text="주문 시점의 가격을 저장합니다."
+    )
+    quantity = models.PositiveIntegerField(verbose_name="주문 수량")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
