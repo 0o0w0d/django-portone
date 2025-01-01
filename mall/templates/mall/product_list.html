@@ -4,6 +4,24 @@
 {% load thumbnail %}
 
 {% block content %}
+  <!-- Modal -->
+  <div class="modal fade" id="alert-modal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">알림</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {# 장바구니 성공 여부 #}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+          <a class="btn btn-primary" href="{% url 'cart_detail' %}">장바구니로 이동</a>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="row">
     {% for product in product_list %}
       <div class="col-sm-6 col-lg-4 mb-3">
@@ -36,9 +54,6 @@
 
 {% block script %}
   <script>
-    window.csrf_token = "{{ csrf_token }}";
-  </script>
-  <script>
     async function addCart(url) {
       const response = await fetch(url, {
         method: "POST",
@@ -55,15 +70,17 @@
     }
   </script>
   <script>
+    const alert_modal = new AlertModal("#alert-modal")
+
     document.querySelectorAll('.cart-btn').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
         const url = e.target.href;
         try {
           await addCart(e.target.href);
-          alert("장바구니에 담았습니다.");
+          alert_modal.show("장바구니에 담았습니다.")
         } catch (err) {
-          alert("장바구니 담기에 실패했습니다.");
+          alert_modal.show("장바구니 담기에 실패했습니다.")
           console.error(err);
         }
       })
