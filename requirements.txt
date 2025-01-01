@@ -5,6 +5,7 @@ iamport-rest-client
 pillow
 requests
 sorl-thumbnail
+django-widget-tweaks
 
 # for dev
 django-debug-toolbar

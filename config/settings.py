@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # 3rd party
     "django_bootstrap5",
     "sorl.thumbnail",
+    "widget_tweaks",
 ]
 
 MIDDLEWARE = [

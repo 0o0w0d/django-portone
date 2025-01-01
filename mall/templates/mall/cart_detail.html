@@ -1,33 +1,51 @@
 {% extends "mall/base.html" %}
+{% load widget_tweaks %}
 
 {% block content %}
   <h2>장바구니</h2>
-  <div class="mt-4">
-
+  <div class="container my-5">
     <form action="" method="post" novalidate="novalidate">
-      <table>
-        <thead></thead>
-        <tbody>
-          {% csrf_token %}
-          {{ formset.management_form }}
-          {% for form in formset %}
-            {% for field in form.hidden_fields %}
-              {{ field }}
-            {% endfor %}
-            {% with form.instance as cart_product %}
-            <tr>
-              <td>{{ cart_product.product.name }}</td>
-              <td>
-                {{ form.quantity }}
-                {{ form.quantity.errors }}
-              </td>
-              <td>{{ form.DELETE }}</td>
-            </tr>
-            {% endwith %}
-          {% endfor %}
-        </tbody>
-      </table>
-      <input type="submit" class="btn btn-primary" value="장바구니 업데이트">
+      <div class="card shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="text-center py-3">상품명</th>
+                <th class="text-center py-3" style="width: 200px;">수량</th>
+                <th class="text-center py-3" style="width: 100px;">삭제</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% csrf_token %}
+              {{ formset.management_form }}
+              {% for form in formset %}
+                {% for field in form.hidden_fields %}
+                  {{ field }}
+                {% endfor %}
+                {% with form.instance as cart_product %}
+                <tr>
+                  <td class="align-middle">{{ cart_product.product.name }}</td>
+                  <td class="align-middle">
+                    {% render_field form.quantity class+="form-control text-center" style="max-width: 120px; margin: 0 auto;" %}
+                    <div class="text-danger small">{{ form.quantity.errors }}</div>
+                  </td>
+                  <td class="align-middle text-center">
+                    <div class="form-check d-flex justify-content-center">
+                      {% render_field form.DELETE class+="form-check-input" %}
+                    </div>
+                  </td>
+                </tr>
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer bg-white text-end py-3">
+          <button type="submit" class="btn btn-secondary px-4">
+            장바구니 업데이트
+          </button>
+        </div>
+      </div>
     </form>
   </div>
   <hr>
