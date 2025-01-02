@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from mall.models import CartProduct, Category, Product
+from mall.models import CartProduct, Category, Order, Product
 
 # Register your models here.
 
@@ -36,4 +36,9 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(CartProduct)
 class CartProductAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
     pass

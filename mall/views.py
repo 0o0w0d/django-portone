@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 
 from mall.forms import CartProductForm
-from mall.models import CartProduct, Product
+from mall.models import CartProduct, Order, Product
 
 
 # Create your views here.
@@ -81,3 +81,22 @@ def add_to_cart(request, product_pk):
     # redirect_url = request.META.get("HTTP_REFERER", "product_list")
     # return redirect(redirect_url)
     return JsonResponse({"statusCode": 200})
+
+
+@login_required
+def order_new(request):
+    user = request.user
+    cart_product_qs = CartProduct.objects.filter(user=user)
+
+    # 주문 생성 -> 장바구니 삭제
+    order = Order.create_from_cart(user=user, cart_product_ps=cart_product_qs)
+    cart_product_qs.delete()
+
+    return redirect("order_pay", order.pk)
+
+
+@login_required
+def order_pay(request, pk):
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    messages.warning(request, "구현 예정")
+    return render(request, "mall/order_pay.html", {"order": order})

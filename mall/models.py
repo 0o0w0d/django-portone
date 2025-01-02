@@ -1,8 +1,11 @@
+from typing import List
 from uuid import uuid4
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.db.models import UniqueConstraint
+from django.db.models import QuerySet
 
+from accounts.models import User
 from config import settings
 
 
@@ -64,6 +67,10 @@ class CartProduct(models.Model):
             UniqueConstraint(fields=["user", "product"], name="unique_user_product")
         ]
 
+    @property
+    def amount(self):
+        return self.product.price * self.quantity
+
 
 class Order(models.Model):
     class Status(models.TextChoices):
@@ -90,6 +97,29 @@ class Order(models.Model):
     product_set = models.ManyToManyField(Product, through="OrderedProduct", blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def create_from_cart(
+        cls, user: User, cart_product_ps: QuerySet[CartProduct]
+    ) -> "Order":
+        # 리스트를 생성해 DB 조회가 1번만 실행되도록
+        cart_product_list: List[CartProduct] = list(cart_product_ps)
+        total_amount = sum(cart_product.amount for cart_product in cart_product_list)
+        order = cls.objects.create(user=user, total_amount=total_amount)
+
+        ordered_product_list = []
+        for cart_product in cart_product_list:
+            ordered_product = OrderedProduct(
+                order=order,
+                product=cart_product.product,
+                name=cart_product.product.name,
+                price=cart_product.product.price,
+                quantity=cart_product.quantity,
+            )
+            ordered_product_list.append(ordered_product)
+
+        OrderedProduct.objects.bulk_create(ordered_product_list)
+        return order
 
 
 # order - product M2M으로 연결하는 모델
