@@ -128,6 +128,19 @@ class Order(models.Model):
         OrderedProduct.objects.bulk_create(ordered_product_list)
         return order
 
+    @property
+    def name(self):
+        first_product = self.orderedproduct_set.first()
+        if first_product is None:
+            return "등록된 상품이 없습니다."
+        size = self.orderedproduct_set.all().count()
+        if size < 2:
+            return first_product.name
+        return f"{first_product.name} 외 {size - 1}건"
+
+    def can_pay(self) -> bool:
+        return self.status in (self.Status.REQUESTED, self.Status.FAILED_PAYMEMT)
+
 
 # order - product M2M으로 연결하는 모델
 class OrderedProduct(models.Model):
@@ -159,6 +172,7 @@ class AbstractPortonePayment(models.Model):
 
     meta = models.JSONField("포트원 결제내역", default=dict, editable=False)
     uid = models.UUIDField("쇼핑몰 결제식별자", default=uuid4, editable=False)
+    name = models.CharField("결제명", max_length=200)
     desired_amount = models.PositiveIntegerField("결제금액", editable=False)
     buyer_name = models.CharField("구매자 이름", max_length=100, editable=False)
     buyer_email = models.EmailField("구매자 이메일", editable=False)
@@ -205,3 +219,14 @@ class AbstractPortonePayment(models.Model):
 # 하나의 order에 대한 결제 시도
 class OrderPayment(AbstractPortonePayment):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, db_constraint=False)
+
+    @classmethod
+    def create_by_order(cls, order: Order) -> "OrderPayment":
+        payment = cls.objects.create(
+            order=order,
+            name=order.name,
+            desired_amount=order.total_amount,
+            buyer_name=order.user.get_full_name(),
+            buyer_email=order.user.email,
+        )
+        return payment

@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 
 from mall.forms import CartProductForm
-from mall.models import CartProduct, Order, Product
+from mall.models import CartProduct, Order, OrderPayment, Product
 
 
 # Create your views here.
@@ -99,4 +99,14 @@ def order_new(request):
 def order_pay(request, pk):
     order = get_object_or_404(Order, pk=pk, user=request.user)
     messages.warning(request, "구현 예정")
-    return render(request, "mall/order_pay.html", {"order": order})
+
+    # 결제를 진행해도 되는 상황인지 확인하는 메서드 => 비즈니스 로직은 models.py에 구현현
+    if not order.can_pay():
+        messages.error(request, "현재 결제를 할 수 없는 주문입니다.")
+        return redirect("order_detail", order.pk)  # TODO: order_detail 구현 필요
+
+    # order로부터 payment 생성
+    payment = OrderPayment.create_by_order(order)
+    print(payment)
+
+    return render(request, "mall/order_pay.html", {"payment": payment})
