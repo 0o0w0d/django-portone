@@ -7,6 +7,7 @@ from django.core.validators import MinValueValidator
 from django.db.models import UniqueConstraint
 from django.db.models import QuerySet
 from django.http import Http404
+from django.urls import reverse
 from iamport import Iamport
 
 from accounts.models import User
@@ -141,6 +142,9 @@ class Order(models.Model):
     def can_pay(self) -> bool:
         return self.status in (self.Status.REQUESTED, self.Status.FAILED_PAYMEMT)
 
+    def get_absolute_url(self):
+        return reverse("order_detail", kwargs={"pk": self.pk})
+
 
 # order - product M2M으로 연결하는 모델
 class OrderedProduct(models.Model):
@@ -204,15 +208,14 @@ class AbstractPortonePayment(models.Model):
 
     def update(self):
         try:
-            self.api.find(merchant_uid=self.merchant_uid)
+            self.meta = self.api.find(merchant_uid=self.merchant_uid)
         except (Iamport.ResponseError, Iamport.HttpError) as e:
-            logger.error(str(e))
-            raise Http404("포트원에서 결제 내역을 찾을 수 없습니다.")
+            logger.error(str(e), exc_info=e)
+            raise Http404("포트원에서 결제내역을 찾을 수 없습니다.")
 
         self.pay_status = self.meta["status"]
-        self.is_paid_ok = self.api.is_paid(
-            self.desired_amount, response=self.meta
-        )  # 결제 금액과 실결제 금액이 일치한 지 확인하는 메서드
+        self.is_paid_ok = self.api.is_paid(self.desired_amount, response=self.meta)
+        self.save()
 
         # TODO: 결제완료지만 is_paid_ok=False => 결제 금액이 맞지 않은 경우
 
@@ -234,3 +237,17 @@ class OrderPayment(AbstractPortonePayment):
             buyer_email=order.user.email,
         )
         return payment
+
+    def update(self):
+        super().update
+
+        if self.is_paid_ok:
+            self.order.status = Order.Status.PAID
+            self.order.save()
+
+            # 다수의 결제 시도 (현재 order에 대한 결제 시도 삭제 - 현재 결제 시도 제외)
+            self.order.orderpayment_set.exclude(pk=self.pk).delete()
+
+        elif self.pay_status in (self.PayStatus.CANCELED, self.PayStatus.FAILED):
+            self.order.status = Order.Status.FAILED_PAYMEMT
+            self.order.save()

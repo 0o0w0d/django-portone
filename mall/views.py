@@ -104,7 +104,8 @@ def order_pay(request, pk):
     # 결제를 진행해도 되는 상황인지 확인하는 메서드 => 비즈니스 로직은 models.py에 구현현
     if not order.can_pay():
         messages.error(request, "현재 결제를 할 수 없는 주문입니다.")
-        return redirect("order_detail", order.pk)  # TODO: order_detail 구현 필요
+        # return redirect("order_detail", order.pk)
+        return redirect(order)
 
     # order로부터 payment 생성
     payment = OrderPayment.create_by_order(order)
@@ -132,6 +133,11 @@ def order_pay(request, pk):
 @login_required
 def order_check(request, order_pk, payment_pk):
     payment = get_object_or_404(OrderPayment, pk=payment_pk, order__user=request.user)
-    # payment.update()
-    # return redirect("order_detail", order_pk)  # TODO: order_detail 구현 예정
-    return HttpResponse("order check page")
+    payment.update()
+    return redirect(payment.order)
+
+
+@login_required
+def order_detail(request, pk):
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    return render(request, "mall/order_detail.html", {"order": order})

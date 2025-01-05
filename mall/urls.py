@@ -12,4 +12,5 @@ urlpatterns = [
         views.order_check,
         name="order_check",
     ),
+    path("order/<int:pk>/", views.order_detail, name="order_detail"),
 ]
