@@ -8,3 +8,32 @@
   {{ payment.buyer_email }}<br/>
   {{ payment.buyer_name }}<br/>
 {% endblock content %}
+
+{% block script %}
+  {{ payment_props|json_script:"payment-props" }}
+
+  <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+  <script>
+    function PortOneLoad() {
+      const IMP = window.IMP;
+      const next_url = "{{ next_url }}";
+      IMP.init("{{ portone_shop_id }}");
+
+      const json_string = document
+        .querySelector("#payment-props")
+        .textContent;
+
+      const props = JSON.parse(json_string);
+      console.log(props);
+      console.log(next_url);
+
+      IMP.request_pay(props, function (response) {
+        console.log(response)
+        // location.href = next_url;
+      });
+    }
+
+    PortOneLoad();
+  </script>
+
+{% endblock script %}

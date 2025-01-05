@@ -1,11 +1,13 @@
 from django.forms import modelformset_factory
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
+from django.conf import settings
 from mall.forms import CartProductForm
 from mall.models import CartProduct, Order, OrderPayment, Product
 
@@ -98,7 +100,6 @@ def order_new(request):
 @login_required
 def order_pay(request, pk):
     order = get_object_or_404(Order, pk=pk, user=request.user)
-    messages.warning(request, "구현 예정")
 
     # 결제를 진행해도 되는 상황인지 확인하는 메서드 => 비즈니스 로직은 models.py에 구현현
     if not order.can_pay():
@@ -107,6 +108,30 @@ def order_pay(request, pk):
 
     # order로부터 payment 생성
     payment = OrderPayment.create_by_order(order)
-    print(payment)
 
-    return render(request, "mall/order_pay.html", {"payment": payment})
+    payment_props = {
+        "pg": settings.PORTONE_PG,
+        "merchant_uid": payment.merchant_uid,
+        "name": payment.name,
+        "amount": payment.desired_amount,
+        "buyer_name": payment.buyer_name or request.user.username,
+        "buyer_email": payment.buyer_email,
+    }
+
+    return render(
+        request,
+        "mall/order_pay.html",
+        {
+            "payment_props": payment_props,
+            "portone_shop_id": settings.PORTONE_SHOP_ID,
+            "next_url": reverse("order_check", args=[order.pk, payment.pk]),
+        },
+    )
+
+
+@login_required
+def order_check(request, order_pk, payment_pk):
+    payment = get_object_or_404(OrderPayment, pk=payment_pk, order__user=request.user)
+    # payment.update()
+    # return redirect("order_detail", order_pk)  # TODO: order_detail 구현 예정
+    return HttpResponse("order check page")

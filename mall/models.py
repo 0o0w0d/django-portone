@@ -10,7 +10,7 @@ from django.http import Http404
 from iamport import Iamport
 
 from accounts.models import User
-from config import settings
+from django.conf import settings
 
 
 logger = logging.getLogger(__name__)
@@ -192,6 +192,10 @@ class AbstractPortonePayment(models.Model):
         "결제 성공 여부", default=False, db_index=True, editable=False
     )
 
+    @property
+    def merchant_uid(self):
+        return str(self.uid)
+
     @cached_property
     def api(self):
         return Iamport(
@@ -200,7 +204,7 @@ class AbstractPortonePayment(models.Model):
 
     def update(self):
         try:
-            self.api.find(merchant_uid=self.uid)
+            self.api.find(merchant_uid=self.merchant_uid)
         except (Iamport.ResponseError, Iamport.HttpError) as e:
             logger.error(str(e))
             raise Http404("포트원에서 결제 내역을 찾을 수 없습니다.")
