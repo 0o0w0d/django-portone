@@ -88,7 +88,7 @@ class Order(models.Model):
         PREPARED_PRODUCT = "prepared_product", "상품 준비중"
         SHIPPED = "shipped", "배송중"
         DELIVERED = "delivered", "배송완료"
-        CANCELED = "canceled", "주문 취소"
+        CANCELLED = "cancelled", "주문 취소"
 
     uid = models.UUIDField(default=uuid4, editable=False)
     user = models.ForeignKey(
@@ -142,11 +142,21 @@ class Order(models.Model):
     def can_pay(self) -> bool:
         return self.status in (self.Status.REQUESTED, self.Status.FAILED_PAYMEMT)
 
+    def cancel(self, reason=""):
+        # 실결제 로직이 AbstractPortonePayment에 구현되어 있어 실제 결제 취소 로직을 해당 모델에 구현
+        for payment in self.orderpayment_set.all():
+            payment.cancel(reason=reason)
+
+    def update(self):
+        for payment in self.orderpayment_set.all():
+            payment.update()
+
     def get_absolute_url(self):
         return reverse("order_detail", kwargs={"pk": self.pk})
 
     class Meta:
         ordering = ["-pk"]
+        verbose_name = verbose_name_plural = "주문"
 
 
 # order - product M2M으로 연결하는 모델
@@ -174,7 +184,7 @@ class AbstractPortonePayment(models.Model):
     class PayStatus(models.TextChoices):
         READY = "ready", "결제 준비"
         PAID = "paid", "결제 완료"
-        CANCELED = "canceled", "결제 취소"
+        CANCELLED = "cancelled", "결제 취소"
         FAILED = "failed", "결제 실패"
 
     meta = models.JSONField("포트원 결제내역", default=dict, editable=False)
@@ -209,18 +219,30 @@ class AbstractPortonePayment(models.Model):
             imp_key=settings.PORTONE_API_KEY, imp_secret=settings.PORTONE_API_SECRET
         )
 
-    def update(self):
-        try:
-            self.meta = self.api.find(merchant_uid=self.merchant_uid)
-        except (Iamport.ResponseError, Iamport.HttpError) as e:
-            logger.error(str(e), exc_info=e)
-            raise Http404("포트원에서 결제내역을 찾을 수 없습니다.")
+    def update(self, response=None):
+        if response is None:
+            try:
+                self.meta = self.api.find(merchant_uid=self.merchant_uid)
+            except (Iamport.ResponseError, Iamport.HttpError) as e:
+                logger.error(str(e), exc_info=e)
+                raise Http404("포트원에서 결제내역을 찾을 수 없습니다.")
+        else:
+            self.meta = response
 
         self.pay_status = self.meta["status"]
         self.is_paid_ok = self.api.is_paid(self.desired_amount, response=self.meta)
         self.save()
 
         # TODO: 결제완료지만 is_paid_ok=False => 결제 금액이 맞지 않은 경우
+
+    def cancel(self, reason=""):
+        try:
+            response = self.api.cancel(reason=reason, merchant_uid=self.merchant_uid)
+            # portone api 호출이 cancel, find 두 경우 다 이뤄지므로, cancel 시 api 호출의 응답 값을 이용해
+            # portone api 호출을 한 번만 이루어지도록 설정
+            self.update(response)
+        except Iamport.ResponseError:
+            self.update()
 
     class Meta:
         abstract = True
@@ -241,8 +263,8 @@ class OrderPayment(AbstractPortonePayment):
         )
         return payment
 
-    def update(self):
-        super().update
+    def update(self, response=None):
+        super().update(response)
 
         if self.is_paid_ok:
             self.order.status = Order.Status.PAID
@@ -251,6 +273,10 @@ class OrderPayment(AbstractPortonePayment):
             # 다수의 결제 시도 (현재 order에 대한 결제 시도 삭제 - 현재 결제 시도 제외)
             self.order.orderpayment_set.exclude(pk=self.pk).delete()
 
-        elif self.pay_status in (self.PayStatus.CANCELED, self.PayStatus.FAILED):
+        elif self.pay_status == self.PayStatus.FAILED:
             self.order.status = Order.Status.FAILED_PAYMEMT
+            self.order.save()
+
+        elif self.pay_status == self.PayStatus.CANCELLED:
+            self.order.status = Order.Status.CANCELLED
             self.order.save()
