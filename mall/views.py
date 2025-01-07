@@ -86,6 +86,13 @@ def add_to_cart(request, product_pk):
 
 
 @login_required
+def order_list(request):
+    user = request.user
+    order_qs = Order.objects.filter(user=user)
+    return render(request, "mall/order_list.html", {"order_list": order_qs})
+
+
+@login_required
 def order_new(request):
     user = request.user
     cart_product_qs = CartProduct.objects.filter(user=user)

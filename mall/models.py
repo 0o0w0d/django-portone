@@ -145,6 +145,9 @@ class Order(models.Model):
     def get_absolute_url(self):
         return reverse("order_detail", kwargs={"pk": self.pk})
 
+    class Meta:
+        ordering = ["-pk"]
+
 
 # order - product M2M으로 연결하는 모델
 class OrderedProduct(models.Model):
